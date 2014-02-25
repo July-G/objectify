@@ -8,9 +8,11 @@ import java.util.Map;
 
 import org.testng.annotations.Test;
 
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.TranslateException;
 import com.googlecode.objectify.annotation.EmbedMap;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.test.entity.Trivial;
 import com.googlecode.objectify.test.util.TestBase;
 
 /**
@@ -83,21 +85,28 @@ public class EmbedMapTests extends TestBase
 		assert (fetched.primitives.equals(hml.primitives));
 	}
 
+	/**
+	 * We should be able to store a Key<?> as the EmbedMap key
+	 */
 	@com.googlecode.objectify.annotation.Entity
-	public static class MissingEmbedMapAnnotation {
+	public static class HasMapWithKeyKey {
 		@Id
 		Long id;
 
-		Map<String, Long> primitives = new HashMap<String, Long>();
+		@EmbedMap
+		Map<Key<Trivial>, Long> primitives = new HashMap<>();
 	}
 
-	/**
-	 * We shouldn't be able to register without the @EmbedMap annotation; secures future compatiblity
-	 */
-	@Test(expectedExceptions=IllegalStateException.class)
-	public void testMissingEmbedMapAnnotation() throws Exception {
-		fact().register(MissingEmbedMapAnnotation.class);
+	@Test
+	public void keyKeyStoresOk() throws Exception {
+		fact().register(HasMapWithKeyKey.class);
+
+		HasMapWithKeyKey hml = new HasMapWithKeyKey();
+		hml.primitives.put(Key.create(Trivial.class, 123L), 1L);
+		hml.primitives.put(Key.create(Trivial.class, 456L), 2L);
+
+		HasMapWithKeyKey fetched = this.putClearGet(hml);
+
+		assert fetched.primitives.equals(hml.primitives);
 	}
-
-
 }
